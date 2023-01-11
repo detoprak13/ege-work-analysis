@@ -34,20 +34,20 @@ public class SaleController {
 //        6221510683336604
 
         ArrayList<SaleInnerDto> result = new ArrayList<>();
-        Integer totalCount  = 0;
+        BigDecimal totalCount = BigDecimal.ZERO; //.valueOf(0)
         for (Sale sale : sales) {
-            totalCount += sale.getToplamUrunAdedi();
+            totalCount = totalCount.add(BigDecimal.valueOf(sale.getToplamUrunAdedi()));
         }
 
         for (int i = 0; i < sales.size(); i++) {
-            BigDecimal removedCount = BigDecimal.valueOf(totalCount - sales.get(i).getToplamUrunAdedi());
+            BigDecimal removedCount = totalCount.subtract(BigDecimal.valueOf(sales.get(i).getToplamUrunAdedi()));
             SaleInnerDto saleInnerDto  = new SaleInnerDto();
             saleInnerDto.setArtikelNo(sales.get(i).getArtikelNo());
             ArrayList<SaleDto> subList = new ArrayList<>();
             saleInnerDto.setSales(subList);
             result.add(saleInnerDto);
 
-            if (removedCount.equals(BigDecimal.valueOf(0))) continue;
+            if (removedCount.equals(BigDecimal.ZERO)) continue;
 
             BigDecimal unit = BigDecimal.valueOf(sales.get(i).getToplamUrunAdedi()).divide(removedCount,  8, HALF_UP);
             for (int j = 0; j < sales.size(); j++) {

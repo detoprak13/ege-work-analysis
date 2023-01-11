@@ -11,7 +11,7 @@ public class Sale {
     private String flag;
     private Integer esasUrunFlag;
     private String artikelNo;
-    private Integer toplamUrunAdedi;
+    private Double toplamUrunAdedi;
 
     @Id
     @Column(name = "custcardnumber")
@@ -61,11 +61,11 @@ public class Sale {
     }
 
     @Column(name = "toplam_urun_adedi")
-    public Integer getToplamUrunAdedi() {
+    public Double getToplamUrunAdedi() {
         return toplamUrunAdedi;
     }
 
-    public void setToplamUrunAdedi(Integer toplamUrunAdedi) {
+    public void setToplamUrunAdedi(Double toplamUrunAdedi) {
         this.toplamUrunAdedi = toplamUrunAdedi;
     }
 }

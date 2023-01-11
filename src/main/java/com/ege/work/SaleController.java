@@ -29,49 +29,66 @@ public class SaleController {
     //1_Yas_Alti_Mamalar---L
 
     @GetMapping("/islem")
-    public ArrayList<SaleInnerDto> deneme(@RequestParam String ikameGrup, @RequestParam String custCardNum)  {
+    public ArrayList<SaleInnerDto> deneme(@RequestParam String ikameGrup, @RequestParam String custCardNum) {
         List<Sale> sales = saleService.findByIkameGrupAndCustCardNum(ikameGrup, custCardNum);
-//        6221510683336604
+// 6221510683336604
 
         ArrayList<SaleInnerDto> result = new ArrayList<>();
-        Integer totalCount  = 0;
+        BigDecimal totalCount = BigDecimal.ZERO; //.valueOf(0)
+        BigDecimal toBeRemovedCount = BigDecimal.ZERO; //bunu ekledik
+
         for (Sale sale : sales) {
-            totalCount += sale.getToplamUrunAdedi();
+            totalCount = totalCount.add(BigDecimal.valueOf(sale.getToplamUrunAdedi()));
+            if (sale.getEsasUrunFlag() == 0) continue;// yeni
+            toBeRemovedCount = toBeRemovedCount.add(BigDecimal.valueOf(sale.getToplamUrunAdedi())); // yeni
         }
 
+        BigDecimal removedCount = totalCount.subtract(toBeRemovedCount);// yeni BigDecimal
+
         for (int i = 0; i < sales.size(); i++) {
-            BigDecimal removedCount = BigDecimal.valueOf(totalCount - sales.get(i).getToplamUrunAdedi());
-            SaleInnerDto saleInnerDto  = new SaleInnerDto();
+            if (sales.get(i).getEsasUrunFlag() == 0) continue; // yeni satır toplam için
+
+            //  BigDecimal removedCount = totalCount.subtract(BigDecimal.valueOf(sales.get(i).getToplamUrunAdedi())); // bunu geri koy
+
+            SaleInnerDto saleInnerDto = new SaleInnerDto();
             saleInnerDto.setArtikelNo(sales.get(i).getArtikelNo());
             ArrayList<SaleDto> subList = new ArrayList<>();
             saleInnerDto.setSales(subList);
             result.add(saleInnerDto);
 
-            if (removedCount.equals(BigDecimal.valueOf(0))) continue;
+            if (removedCount.equals(BigDecimal.ZERO)) continue;
+            try {
 
-            BigDecimal unit = BigDecimal.valueOf(sales.get(i).getToplamUrunAdedi()).divide(removedCount,  8, HALF_UP);
-            for (int j = 0; j < sales.size(); j++) {
-                if (i == j) continue;
-                SaleDto dto = new SaleDto();
-                subList.add(dto);
+                BigDecimal unit = BigDecimal.valueOf(sales.get(i).getToplamUrunAdedi()).divide(removedCount, 8, HALF_UP);
+                System.err.println("");
+                for (int j = 0; j < sales.size(); j++) {
+                    if (i == j) continue;
+                    if (sales.get(j).getEsasUrunFlag() == 1) continue; // yeni satır toplam için
+                    SaleDto dto = new SaleDto();
+                    subList.add(dto);
 
 
-                dto.setArtikelNo(sales.get(j).getArtikelNo());
-                dto.setToplamUrunAdedi(unit.multiply(BigDecimal.valueOf(sales.get(j).getToplamUrunAdedi())).doubleValue());
+                    dto.setArtikelNo(sales.get(j).getArtikelNo());
+                    dto.setToplamUrunAdedi(unit.multiply(BigDecimal.valueOf(sales.get(j).getToplamUrunAdedi())).doubleValue());
+                }
+            } catch (Exception e) {
+                System.err.println(removedCount);
+                e.printStackTrace();
             }
         }
 
         return result;
+
     }
 
     @GetMapping("/islem2")
-    public ArrayList<SalePerCust> deneme2(@RequestParam String ikameGrup)  {
+    public ArrayList<SalePerCust> deneme2(@RequestParam String ikameGrup) {
         List<String> custs = saleService.findCustsForIkameGrup(ikameGrup);
 
         ArrayList<SalePerCust> result = new ArrayList<>();
 
-        custs.forEach(cust ->  {
-            SalePerCust  a = new SalePerCust();
+        custs.forEach(cust -> {
+            SalePerCust a = new SalePerCust();
             a.setCustCardNum(cust);
             a.setSaleResults(deneme(ikameGrup, cust));
             result.add(a);
@@ -84,8 +101,8 @@ public class SaleController {
     public ArrayList<SaleIkameGrupDto> deneme3() {
         List<String> ikameGrups = saleService.findUniqueIkameGrups();
 
-        ArrayList<SaleIkameGrupDto> result =  new ArrayList<>();
-        int count  = 0;
+        ArrayList<SaleIkameGrupDto> result = new ArrayList<>();
+        int count = 0;
         for (String ikameGrup : ikameGrups) {
 //            if (count == 5) break;
             SaleIkameGrupDto a = new SaleIkameGrupDto();
@@ -111,17 +128,17 @@ public class SaleController {
                     SaleInnerDto saleInnerDto;
                     if (result.getDto().contains(saleResult)) {
                         saleInnerDto = result.getDto().get(result.getDto().indexOf(saleResult));
-                    }  else {
+                    } else {
                         saleInnerDto = new SaleInnerDto();
                         saleInnerDto.setArtikelNo(saleResult.getArtikelNo());
                         result.getDto().add(saleInnerDto);
                     }
 
                     for (SaleDto sale : saleResult.getSales()) {
-                        if (saleInnerDto.getSales().contains(sale))  {
+                        if (saleInnerDto.getSales().contains(sale)) {
                             SaleDto currSale = saleInnerDto.getSales().get(saleInnerDto.getSales().indexOf(sale));
                             currSale.setToplamUrunAdedi(currSale.getToplamUrunAdedi() + sale.getToplamUrunAdedi());
-                        }  else {
+                        } else {
                             saleInnerDto.getSales().add(sale);
                         }
                     }
@@ -129,6 +146,6 @@ public class SaleController {
             }
         }
 
-        CsvWriter.writeDataLineByLine("SUPER_FLAG_TRX_DETAY_1_HYBRID-sonuc.csv", results);
+        CsvWriter.writeDataLineByLine("Deneme.csv", results);
     }
 }

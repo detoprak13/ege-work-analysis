@@ -13,6 +13,18 @@ public class Sale {
     private String artikelNo;
     private Double toplamUrunAdedi;
 
+    public Sale() {
+    }
+
+    public Sale(String custCardNum, String ikameGrup, String flag, Integer esasUrunFlag, String artikelNo, Double toplamUrunAdedi) {
+        this.custCardNum = custCardNum;
+        this.ikameGrup = ikameGrup;
+        this.flag = flag;
+        this.esasUrunFlag = esasUrunFlag;
+        this.artikelNo = artikelNo;
+        this.toplamUrunAdedi = toplamUrunAdedi;
+    }
+
     @Id
     @Column(name = "custcardnumber")
     public String getCustCardNum() {

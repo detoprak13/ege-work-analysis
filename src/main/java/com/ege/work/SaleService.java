@@ -36,4 +36,16 @@ public class SaleService {
     public List<String> findUniqueIkameGrups() {
         return saleRepository.findUniqueIkameGrups();
     }
+
+    public void truncate() {
+        saleRepository.truncate();
+    }
+
+    public Sale create(Sale sale) {
+        return saleRepository.save(sale);
+    }
+
+    public void create(List<Sale> sales) {
+        saleRepository.saveAll(sales);
+    }
 }

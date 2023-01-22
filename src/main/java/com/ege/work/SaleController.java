@@ -1,11 +1,13 @@
 package com.ege.work;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.springframework.web.bind.annotation.*;
 
+import java.io.*;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -115,7 +117,9 @@ public class SaleController {
     }
 
     @GetMapping("/islem4")
-    public void deneme4() {
+    public void deneme4(@RequestParam(required = false) String resultFileName) {
+        if (resultFileName == null || resultFileName.isEmpty() || resultFileName.isBlank())
+            resultFileName = "output" + LocalDateTime.now();
         List<Result> results = new ArrayList<>();
         ArrayList<SaleIkameGrupDto> deneme3 = deneme3();
         for (SaleIkameGrupDto saleIkameGrupDto : deneme3) {
@@ -146,6 +150,53 @@ public class SaleController {
             }
         }
 
-        CsvWriter.writeDataLineByLine("Deneme.csv", results);
+        CsvWriter.writeDataLineByLine(resultFileName + ".csv", results);
+    }
+
+    @GetMapping("/truncate")
+    public void truncate() {
+        saleService.truncate();
+    }
+
+    @PostMapping("/upload")
+    public void upload(@RequestParam String path) {
+        try {
+            BufferedReader fileReader = new BufferedReader(new FileReader(path));
+            CSVFormat csvFormat = CSVFormat.Builder
+                    .create()
+                    .setSkipHeaderRecord(true)
+                    .build();
+            CSVParser csvParser = new CSVParser(fileReader, csvFormat);
+
+            Iterable<CSVRecord> csvRecords = csvParser.getRecords();
+
+            ArrayList<Sale> sales = new ArrayList<>();
+
+            boolean isFirstLine = true;
+            int batchCount = 0;
+            for (CSVRecord csvRecord : csvRecords) {
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    continue;
+                }
+                Sale sale = new Sale(csvRecord.get(0),
+                        csvRecord.get(1),
+                        csvRecord.get(2),
+                        Integer.parseInt(csvRecord.get(3)),
+                        csvRecord.get(4),
+                        Double.parseDouble(csvRecord.get(5)));
+
+                sales.add(sale);
+                batchCount++;
+                if (batchCount == 1000) {
+                    saleService.create(sales);
+                    sales = new ArrayList<>();
+                    batchCount = 0;
+                }
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException("fail to parse CSV file: " + e.getMessage());
+        }
     }
 }
